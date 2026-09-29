@@ -1,5 +1,6 @@
 import cors from "cors";
 import express from "express";
+import { csrfProtectionMiddleware } from "./middlewares/csrf.middleware.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import sessionMiddleware from "./middlewares/session.middleware.js";
 import router from "./router.js";
@@ -18,6 +19,7 @@ app.use(
     credentials: true,
   }),
 );
+app.use(csrfProtectionMiddleware);
 app.use(sessionMiddleware);
 app.use("/api", router);
 app.use(errorMiddleware);
