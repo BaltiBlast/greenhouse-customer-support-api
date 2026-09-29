@@ -140,9 +140,9 @@ DELETE /api/clients/:clientId
 `clientId` doit être un identifiant MongoDB sur 24 caractères hexadécimaux.
 Cette requête ne reçoit pas de corps JSON.
 
-La suppression est atomique. Tous les événements de type `coaching` associés au
-client et appartenant au même utilisateur sont également supprimés. Les cours
-collectifs ne sont pas concernés.
+La suppression est atomique. Tous les événements de type `coaching` et toutes
+les mesures associées au client sont également supprimés. Les cours collectifs
+ne sont pas concernés.
 
 - Réponse `204` : client supprimé, sans corps de réponse.
 - Réponse `400` : identifiant invalide.

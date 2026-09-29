@@ -1,6 +1,7 @@
 import {
   ClientMapper,
   EventMapper,
+  MeasurementMapper,
 } from "../../data/mappers/index.mapper.js";
 
 function getClientInformation(clientData) {
@@ -136,6 +137,7 @@ export function deleteClient(clientId, ownerId) {
     }
 
     await EventMapper.deleteEventsByClientId(clientId, ownerId, session);
+    await MeasurementMapper.deleteMeasurementsByClientId(clientId, session);
     return true;
   });
 }
