@@ -1,11 +1,11 @@
-import { ClientMapper } from "../../data/mappers/index.mapper.js";
+import {
+  ClientMapper,
+  EventMapper,
+  MeasurementMapper,
+} from "../../data/mappers/index.mapper.js";
 
 function getClientInformation(clientData) {
   const {
-    height,
-    weight,
-    bodyFat,
-    muscleMass,
     emergencyContactName,
     emergencyContactRelationship,
     emergencyContactPhone,
@@ -27,19 +27,11 @@ function getClientInformation(clientData) {
       : undefined,
   };
 
-  return {
-    clientInformation: clientToCreate,
-    measurement: {
-      height,
-      weight,
-      bodyFat,
-      muscleMass,
-    },
-  };
+  return clientToCreate;
 }
 
 function getClientResponse(client) {
-  const { _id, __v, ...clientData } = client.toObject();
+  const { _id, __v, ownerId, ...clientData } = client.toObject();
 
   return {
     id: _id.toString(),
@@ -47,52 +39,105 @@ function getClientResponse(client) {
   };
 }
 
-export async function getAllClients() {
-  const clients = await ClientMapper.findAllClients();
+export async function getAllClients(ownerId) {
+  const clients = await ClientMapper.findAllClients(ownerId);
   return clients.map(getClientResponse);
 }
 
-export async function getClientById(clientId) {
-  const client = await ClientMapper.findClientById(clientId);
+export async function getClientById(clientId, ownerId) {
+  const client = await ClientMapper.findClientById(clientId, ownerId);
   return client ? getClientResponse(client) : null;
 }
 
-export function createClient(clientData) {
-  const { clientInformation, measurement } = getClientInformation(clientData);
+export async function createClient(clientData, ownerId) {
+  const clientInformation = getClientInformation(clientData);
 
-  return ClientMapper.createClient({
+  const client = await ClientMapper.createClient({
+    ownerId,
     ...clientInformation,
-    measurements: [measurement],
   });
+
+  return { id: client.id };
 }
 
-export async function updateClient(clientId, clientData) {
-  const existingClient = await ClientMapper.findClientById(clientId);
+export async function updateClient(clientId, ownerId, clientData) {
+  const existingClient = await ClientMapper.findClientById(clientId, ownerId);
 
   if (!existingClient) {
     return null;
   }
 
-  const { clientInformation, measurement } = getClientInformation(clientData);
-  const measurements = existingClient.measurements.map((existingMeasurement) => ({
-    measuredAt: existingMeasurement.measuredAt,
-    height: existingMeasurement.height,
-    weight: existingMeasurement.weight,
-    bodyFat: existingMeasurement.bodyFat,
-    muscleMass: existingMeasurement.muscleMass,
-  }));
+  const clientUpdate = {};
+  const directFields = [
+    "firstName",
+    "lastName",
+    "height",
+    "objectives",
+    "pathologies",
+    "limitations",
+    "hasEatingDisorder",
+  ];
 
-  measurements[measurements.length - 1] = {
-    ...measurements.at(-1),
-    ...measurement,
-  };
-
-  return ClientMapper.updateClientById(clientId, {
-    ...clientInformation,
-    measurements,
+  directFields.forEach((field) => {
+    if (Object.hasOwn(clientData, field)) {
+      clientUpdate[field] = clientData[field];
+    }
   });
+
+  if (Object.hasOwn(clientData, "birthDate")) {
+    clientUpdate.birthDate = new Date(clientData.birthDate);
+  }
+
+  const emergencyContactFields = {
+    emergencyContactName: "name",
+    emergencyContactRelationship: "relationship",
+    emergencyContactPhone: "phone",
+  };
+  const hasEmergencyContactUpdate = Object.keys(emergencyContactFields).some(
+    (field) => Object.hasOwn(clientData, field),
+  );
+
+  if (hasEmergencyContactUpdate) {
+    const emergencyContact = {
+      name: existingClient.emergencyContact?.name,
+      relationship: existingClient.emergencyContact?.relationship,
+      phone: existingClient.emergencyContact?.phone,
+    };
+
+    Object.entries(emergencyContactFields).forEach(([inputField, storedField]) => {
+      if (Object.hasOwn(clientData, inputField)) {
+        emergencyContact[storedField] = clientData[inputField];
+      }
+    });
+
+    clientUpdate.emergencyContact = Object.values(emergencyContact).some(Boolean)
+      ? emergencyContact
+      : undefined;
+  }
+
+  const client = await ClientMapper.updateClientById(
+    clientId,
+    ownerId,
+    clientUpdate,
+  );
+
+  return client ? { id: client.id } : null;
 }
 
-export function deleteClient(clientId) {
-  return ClientMapper.deleteClientById(clientId);
+export function deleteClient(clientId, ownerId) {
+  return ClientMapper.withTransaction(async (session) => {
+    const client = await ClientMapper.deleteClientById(
+      clientId,
+      ownerId,
+      session,
+    );
+
+    if (!client) {
+      return null;
+    }
+
+    await EventMapper.deleteEventsByClientId(clientId, ownerId, session);
+    await MeasurementMapper.deleteMeasurementsByClientId(clientId, session);
+    return true;
+  });
 }

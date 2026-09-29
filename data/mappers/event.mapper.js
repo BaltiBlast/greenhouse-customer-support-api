@@ -14,15 +14,15 @@ class Event extends CoreMapper {
     return this.model.create(eventData);
   }
 
-  findEventById(eventId) {
-    return this.model.findById(eventId);
+  findEventById(eventId, ownerId) {
+    return this.model.findOne({ _id: eventId, ownerId });
   }
 
-  findAllEvents() {
-    return this.model.find();
+  findAllEvents(ownerId) {
+    return this.model.find({ ownerId });
   }
 
-  updateEventById(eventId, eventData) {
+  updateEventById(eventId, ownerId, eventData) {
     const fieldsToSet = {};
     const fieldsToUnset = {};
 
@@ -34,8 +34,8 @@ class Event extends CoreMapper {
       }
     });
 
-    return this.model.findByIdAndUpdate(
-      eventId,
+    return this.model.findOneAndUpdate(
+      { _id: eventId, ownerId },
       {
         $set: fieldsToSet,
         ...(Object.keys(fieldsToUnset).length ? { $unset: fieldsToUnset } : {}),
@@ -44,8 +44,12 @@ class Event extends CoreMapper {
     );
   }
 
-  deleteEventById(eventId) {
-    return this.model.findByIdAndDelete(eventId);
+  deleteEventById(eventId, ownerId) {
+    return this.model.findOneAndDelete({ _id: eventId, ownerId });
+  }
+
+  deleteEventsByClientId(clientId, ownerId, session) {
+    return this.model.deleteMany({ clientId, ownerId }, { session });
   }
 }
 

@@ -3,6 +3,7 @@ import {
   deleteEvent,
   getAllEvents,
   getEventById,
+  InvalidEventDataError,
   updateEvent,
 } from "./events.service.js";
 import {
@@ -27,7 +28,7 @@ function sendInvalidEventId(res, validationResult) {
 
 export async function getAllEventsController(req, res, next) {
   try {
-    const events = await getAllEvents();
+    const events = await getAllEvents(req.session.userId);
     return res.status(200).json(events);
   } catch (error) {
     return next(error);
@@ -42,7 +43,7 @@ export async function getEventByIdController(req, res, next) {
   }
 
   try {
-    const event = await getEventById(validationResult.data);
+    const event = await getEventById(validationResult.data, req.session.userId);
 
     if (!event) {
       return res.status(404).json({ message: "L'événement est introuvable." });
@@ -65,9 +66,13 @@ export async function createEventController(req, res, next) {
   }
 
   try {
-    const event = await createEvent(validationResult.data);
+    const event = await createEvent(validationResult.data, req.session.userId);
     return res.status(201).json({ id: event.id });
   } catch (error) {
+    if (error instanceof InvalidEventDataError) {
+      return res.status(400).json({ message: error.message });
+    }
+
     return next(error);
   }
 }
@@ -88,7 +93,11 @@ export async function updateEventController(req, res, next) {
   }
 
   try {
-    const event = await updateEvent(idValidationResult.data, dataValidationResult.data);
+    const event = await updateEvent(
+      idValidationResult.data,
+      req.session.userId,
+      dataValidationResult.data,
+    );
 
     if (!event) {
       return res.status(404).json({ message: "L'événement est introuvable." });
@@ -96,6 +105,10 @@ export async function updateEventController(req, res, next) {
 
     return res.status(200).json({ id: event.id });
   } catch (error) {
+    if (error instanceof InvalidEventDataError) {
+      return res.status(400).json({ message: error.message });
+    }
+
     return next(error);
   }
 }
@@ -108,7 +121,7 @@ export async function deleteEventController(req, res, next) {
   }
 
   try {
-    const event = await deleteEvent(validationResult.data);
+    const event = await deleteEvent(validationResult.data, req.session.userId);
 
     if (!event) {
       return res.status(404).json({ message: "L'événement est introuvable." });
