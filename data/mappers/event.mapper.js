@@ -47,6 +47,10 @@ class Event extends CoreMapper {
   deleteEventById(eventId, ownerId) {
     return this.model.findOneAndDelete({ _id: eventId, ownerId });
   }
+
+  deleteEventsByClientId(clientId, ownerId, session) {
+    return this.model.deleteMany({ clientId, ownerId }, { session });
+  }
 }
 
 export default Event;

@@ -44,8 +44,11 @@ class Client extends CoreMapper {
     );
   }
 
-  deleteClientById(clientId, ownerId) {
-    return this.model.findOneAndDelete({ _id: clientId, ownerId });
+  deleteClientById(clientId, ownerId, session) {
+    return this.model.findOneAndDelete(
+      { _id: clientId, ownerId },
+      { session },
+    );
   }
 }
 

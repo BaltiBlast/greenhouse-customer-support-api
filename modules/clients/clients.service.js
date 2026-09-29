@@ -1,4 +1,7 @@
-import { ClientMapper } from "../../data/mappers/index.mapper.js";
+import {
+  ClientMapper,
+  EventMapper,
+} from "../../data/mappers/index.mapper.js";
 
 function getClientInformation(clientData) {
   const {
@@ -150,5 +153,18 @@ export async function updateClient(clientId, ownerId, clientData) {
 }
 
 export function deleteClient(clientId, ownerId) {
-  return ClientMapper.deleteClientById(clientId, ownerId);
+  return ClientMapper.withTransaction(async (session) => {
+    const client = await ClientMapper.deleteClientById(
+      clientId,
+      ownerId,
+      session,
+    );
+
+    if (!client) {
+      return null;
+    }
+
+    await EventMapper.deleteEventsByClientId(clientId, ownerId, session);
+    return client;
+  });
 }
