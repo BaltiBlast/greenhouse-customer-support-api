@@ -48,10 +48,12 @@ export async function createEvent(eventData, ownerId) {
     await requireOwnedClient(eventData.clientId, ownerId);
   }
 
-  return EventMapper.createEvent({
+  const event = await EventMapper.createEvent({
     ...getEventData(eventData),
     ownerId,
   });
+
+  return { id: event.id };
 }
 
 export async function updateEvent(eventId, ownerId, eventData) {
@@ -93,9 +95,16 @@ export async function updateEvent(eventId, ownerId, eventData) {
     eventUpdate.clientId = undefined;
   }
 
-  return EventMapper.updateEventById(eventId, ownerId, eventUpdate);
+  const event = await EventMapper.updateEventById(
+    eventId,
+    ownerId,
+    eventUpdate,
+  );
+
+  return event ? { id: event.id } : null;
 }
 
-export function deleteEvent(eventId, ownerId) {
-  return EventMapper.deleteEventById(eventId, ownerId);
+export async function deleteEvent(eventId, ownerId) {
+  const event = await EventMapper.deleteEventById(eventId, ownerId);
+  return event ? true : null;
 }

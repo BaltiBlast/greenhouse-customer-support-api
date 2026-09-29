@@ -60,14 +60,16 @@ export async function getClientById(clientId, ownerId) {
   return client ? getClientResponse(client) : null;
 }
 
-export function createClient(clientData, ownerId) {
+export async function createClient(clientData, ownerId) {
   const { clientInformation, measurement } = getClientInformation(clientData);
 
-  return ClientMapper.createClient({
+  const client = await ClientMapper.createClient({
     ownerId,
     ...clientInformation,
     measurements: [measurement],
   });
+
+  return { id: client.id };
 }
 
 export async function updateClient(clientId, ownerId, clientData) {
@@ -149,7 +151,13 @@ export async function updateClient(clientId, ownerId, clientData) {
     clientUpdate.measurements = measurements;
   }
 
-  return ClientMapper.updateClientById(clientId, ownerId, clientUpdate);
+  const client = await ClientMapper.updateClientById(
+    clientId,
+    ownerId,
+    clientUpdate,
+  );
+
+  return client ? { id: client.id } : null;
 }
 
 export function deleteClient(clientId, ownerId) {
@@ -165,6 +173,6 @@ export function deleteClient(clientId, ownerId) {
     }
 
     await EventMapper.deleteEventsByClientId(clientId, ownerId, session);
-    return client;
+    return true;
   });
 }
