@@ -8,6 +8,11 @@ instructions de `modules/AGENTS.md` et du fichier `AGENTS.md` à la racine.
 Toutes les routes de ce module utilisent le préfixe `/api/events` et nécessitent
 une session authentifiée.
 
+Chaque événement appartient à l'utilisateur authentifié. Son `ownerId` est lu
+depuis la session par le controller et ne doit jamais être accepté dans le corps
+ou exposé dans une réponse. Toutes les lectures et mutations doivent filtrer les
+événements par cet identifiant.
+
 Les corps de requête sont envoyés au format JSON avec l'en-tête
 `Content-Type: application/json`.
 
@@ -29,6 +34,7 @@ Un événement utilise les propriétés suivantes :
 Règles conditionnelles :
 
 - Un `coaching` exige `clientId` et ne doit pas contenir `className`.
+- Le client d'un `coaching` doit appartenir au même utilisateur que l'événement.
 - Un `group-class` exige `className` et ne doit pas contenir `clientId`.
 - Les propriétés inconnues sont refusées.
 

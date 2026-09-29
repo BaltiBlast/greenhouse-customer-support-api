@@ -39,7 +39,7 @@ function getClientInformation(clientData) {
 }
 
 function getClientResponse(client) {
-  const { _id, __v, ...clientData } = client.toObject();
+  const { _id, __v, ownerId, ...clientData } = client.toObject();
 
   return {
     id: _id.toString(),
@@ -47,27 +47,28 @@ function getClientResponse(client) {
   };
 }
 
-export async function getAllClients() {
-  const clients = await ClientMapper.findAllClients();
+export async function getAllClients(ownerId) {
+  const clients = await ClientMapper.findAllClients(ownerId);
   return clients.map(getClientResponse);
 }
 
-export async function getClientById(clientId) {
-  const client = await ClientMapper.findClientById(clientId);
+export async function getClientById(clientId, ownerId) {
+  const client = await ClientMapper.findClientById(clientId, ownerId);
   return client ? getClientResponse(client) : null;
 }
 
-export function createClient(clientData) {
+export function createClient(clientData, ownerId) {
   const { clientInformation, measurement } = getClientInformation(clientData);
 
   return ClientMapper.createClient({
+    ownerId,
     ...clientInformation,
     measurements: [measurement],
   });
 }
 
-export async function updateClient(clientId, clientData) {
-  const existingClient = await ClientMapper.findClientById(clientId);
+export async function updateClient(clientId, ownerId, clientData) {
+  const existingClient = await ClientMapper.findClientById(clientId, ownerId);
 
   if (!existingClient) {
     return null;
@@ -145,9 +146,9 @@ export async function updateClient(clientId, clientData) {
     clientUpdate.measurements = measurements;
   }
 
-  return ClientMapper.updateClientById(clientId, clientUpdate);
+  return ClientMapper.updateClientById(clientId, ownerId, clientUpdate);
 }
 
-export function deleteClient(clientId) {
-  return ClientMapper.deleteClientById(clientId);
+export function deleteClient(clientId, ownerId) {
+  return ClientMapper.deleteClientById(clientId, ownerId);
 }

@@ -27,7 +27,7 @@ function sendInvalidClientId(res, validationResult) {
 
 export async function getAllClientsController(req, res, next) {
   try {
-    const clients = await getAllClients();
+    const clients = await getAllClients(req.session.userId);
     return res.status(200).json(clients);
   } catch (error) {
     return next(error);
@@ -42,7 +42,7 @@ export async function getClientByIdController(req, res, next) {
   }
 
   try {
-    const client = await getClientById(validationResult.data);
+    const client = await getClientById(validationResult.data, req.session.userId);
 
     if (!client) {
       return res.status(404).json({ message: "Le client est introuvable." });
@@ -65,7 +65,7 @@ export async function createClientController(req, res, next) {
   }
 
   try {
-    const client = await createClient(validationResult.data);
+    const client = await createClient(validationResult.data, req.session.userId);
     return res.status(201).json({ id: client.id });
   } catch (error) {
     return next(error);
@@ -88,7 +88,11 @@ export async function updateClientController(req, res, next) {
   }
 
   try {
-    const client = await updateClient(idValidationResult.data, dataValidationResult.data);
+    const client = await updateClient(
+      idValidationResult.data,
+      req.session.userId,
+      dataValidationResult.data,
+    );
 
     if (!client) {
       return res.status(404).json({ message: "Le client est introuvable." });
@@ -108,7 +112,7 @@ export async function deleteClientController(req, res, next) {
   }
 
   try {
-    const client = await deleteClient(validationResult.data);
+    const client = await deleteClient(validationResult.data, req.session.userId);
 
     if (!client) {
       return res.status(404).json({ message: "Le client est introuvable." });

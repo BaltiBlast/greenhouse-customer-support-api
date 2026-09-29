@@ -14,15 +14,15 @@ class Client extends CoreMapper {
     return this.model.create(clientData);
   }
 
-  findClientById(clientId) {
-    return this.model.findById(clientId);
+  findClientById(clientId, ownerId) {
+    return this.model.findOne({ _id: clientId, ownerId });
   }
 
-  findAllClients() {
-    return this.model.find();
+  findAllClients(ownerId) {
+    return this.model.find({ ownerId });
   }
 
-  updateClientById(clientId, clientData) {
+  updateClientById(clientId, ownerId, clientData) {
     const fieldsToSet = {};
     const fieldsToUnset = {};
 
@@ -34,8 +34,8 @@ class Client extends CoreMapper {
       }
     });
 
-    return this.model.findByIdAndUpdate(
-      clientId,
+    return this.model.findOneAndUpdate(
+      { _id: clientId, ownerId },
       {
         $set: fieldsToSet,
         ...(Object.keys(fieldsToUnset).length ? { $unset: fieldsToUnset } : {}),
@@ -44,8 +44,8 @@ class Client extends CoreMapper {
     );
   }
 
-  deleteClientById(clientId) {
-    return this.model.findByIdAndDelete(clientId);
+  deleteClientById(clientId, ownerId) {
+    return this.model.findOneAndDelete({ _id: clientId, ownerId });
   }
 }
 

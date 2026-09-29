@@ -1,9 +1,12 @@
-import { EventMapper } from "../../data/mappers/index.mapper.js";
+import {
+  ClientMapper,
+  EventMapper,
+} from "../../data/mappers/index.mapper.js";
 
-export class InvalidEventUpdateError extends Error {}
+export class InvalidEventDataError extends Error {}
 
 function getEventResponse(event) {
-  const { _id, __v, ...eventData } = event.toObject();
+  const { _id, __v, ownerId, ...eventData } = event.toObject();
 
   return {
     id: _id.toString(),
@@ -20,22 +23,39 @@ function getEventData(eventData) {
   };
 }
 
-export async function getAllEvents() {
-  const events = await EventMapper.findAllEvents();
+async function requireOwnedClient(clientId, ownerId) {
+  const client = await ClientMapper.findClientById(clientId, ownerId);
+
+  if (!client) {
+    throw new InvalidEventDataError(
+      "Le client associé au coaching est introuvable.",
+    );
+  }
+}
+
+export async function getAllEvents(ownerId) {
+  const events = await EventMapper.findAllEvents(ownerId);
   return events.map(getEventResponse);
 }
 
-export async function getEventById(eventId) {
-  const event = await EventMapper.findEventById(eventId);
+export async function getEventById(eventId, ownerId) {
+  const event = await EventMapper.findEventById(eventId, ownerId);
   return event ? getEventResponse(event) : null;
 }
 
-export function createEvent(eventData) {
-  return EventMapper.createEvent(getEventData(eventData));
+export async function createEvent(eventData, ownerId) {
+  if (eventData.type === "coaching") {
+    await requireOwnedClient(eventData.clientId, ownerId);
+  }
+
+  return EventMapper.createEvent({
+    ...getEventData(eventData),
+    ownerId,
+  });
 }
 
-export async function updateEvent(eventId, eventData) {
-  const existingEvent = await EventMapper.findEventById(eventId);
+export async function updateEvent(eventId, ownerId, eventData) {
+  const existingEvent = await EventMapper.findEventById(eventId, ownerId);
 
   if (!existingEvent) {
     return null;
@@ -53,17 +73,19 @@ export async function updateEvent(eventId, eventData) {
     const clientId = eventData.clientId ?? existingEvent.clientId;
 
     if (!clientId || Object.hasOwn(eventData, "className")) {
-      throw new InvalidEventUpdateError(
+      throw new InvalidEventDataError(
         "Un coaching doit être associé à un client, sans nom de cours.",
       );
     }
+
+    await requireOwnedClient(clientId, ownerId);
 
     eventUpdate.className = undefined;
   } else {
     const className = eventData.className ?? existingEvent.className;
 
     if (!className || Object.hasOwn(eventData, "clientId")) {
-      throw new InvalidEventUpdateError(
+      throw new InvalidEventDataError(
         "Un cours collectif doit avoir un nom, sans client associé.",
       );
     }
@@ -71,9 +93,9 @@ export async function updateEvent(eventId, eventData) {
     eventUpdate.clientId = undefined;
   }
 
-  return EventMapper.updateEventById(eventId, eventUpdate);
+  return EventMapper.updateEventById(eventId, ownerId, eventUpdate);
 }
 
-export function deleteEvent(eventId) {
-  return EventMapper.deleteEventById(eventId);
+export function deleteEvent(eventId, ownerId) {
+  return EventMapper.deleteEventById(eventId, ownerId);
 }

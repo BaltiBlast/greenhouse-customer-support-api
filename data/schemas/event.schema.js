@@ -2,6 +2,12 @@ import mongoose from "mongoose";
 
 const eventSchema = new mongoose.Schema(
   {
+    ownerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
     type: {
       type: String,
       required: true,
