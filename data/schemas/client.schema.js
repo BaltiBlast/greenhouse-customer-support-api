@@ -22,41 +22,9 @@ const clientSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    measurements: {
-      type: [
-        {
-          _id: false,
-          measuredAt: {
-            type: Date,
-            required: true,
-            default: Date.now,
-          },
-          height: {
-            type: Number,
-            required: true,
-            min: 1,
-          },
-          weight: {
-            type: Number,
-            required: true,
-            min: 1,
-          },
-          bodyFat: {
-            type: Number,
-            min: 0,
-            max: 100,
-          },
-          muscleMass: {
-            type: Number,
-            min: 0,
-          },
-        },
-      ],
-      required: true,
-      validate: {
-        validator: (measurements) => measurements.length > 0,
-        message: "Une mesure initiale est requise.",
-      },
+    height: {
+      type: Number,
+      min: 1,
     },
     objectives: {
       type: String,

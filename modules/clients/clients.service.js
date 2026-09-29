@@ -5,10 +5,6 @@ import {
 
 function getClientInformation(clientData) {
   const {
-    height,
-    weight,
-    bodyFat,
-    muscleMass,
     emergencyContactName,
     emergencyContactRelationship,
     emergencyContactPhone,
@@ -30,15 +26,7 @@ function getClientInformation(clientData) {
       : undefined,
   };
 
-  return {
-    clientInformation: clientToCreate,
-    measurement: {
-      height,
-      weight,
-      bodyFat,
-      muscleMass,
-    },
-  };
+  return clientToCreate;
 }
 
 function getClientResponse(client) {
@@ -61,12 +49,11 @@ export async function getClientById(clientId, ownerId) {
 }
 
 export async function createClient(clientData, ownerId) {
-  const { clientInformation, measurement } = getClientInformation(clientData);
+  const clientInformation = getClientInformation(clientData);
 
   const client = await ClientMapper.createClient({
     ownerId,
     ...clientInformation,
-    measurements: [measurement],
   });
 
   return { id: client.id };
@@ -83,6 +70,7 @@ export async function updateClient(clientId, ownerId, clientData) {
   const directFields = [
     "firstName",
     "lastName",
+    "height",
     "objectives",
     "pathologies",
     "limitations",
@@ -124,31 +112,6 @@ export async function updateClient(clientId, ownerId, clientData) {
     clientUpdate.emergencyContact = Object.values(emergencyContact).some(Boolean)
       ? emergencyContact
       : undefined;
-  }
-
-  const measurementFields = ["height", "weight", "bodyFat", "muscleMass"];
-  const hasMeasurementUpdate = measurementFields.some((field) =>
-    Object.hasOwn(clientData, field),
-  );
-
-  if (hasMeasurementUpdate) {
-    const measurements = existingClient.measurements.map((measurement) => ({
-      measuredAt: measurement.measuredAt,
-      height: measurement.height,
-      weight: measurement.weight,
-      bodyFat: measurement.bodyFat,
-      muscleMass: measurement.muscleMass,
-    }));
-    const latestMeasurement = { ...measurements.at(-1) };
-
-    measurementFields.forEach((field) => {
-      if (Object.hasOwn(clientData, field)) {
-        latestMeasurement[field] = clientData[field];
-      }
-    });
-
-    measurements[measurements.length - 1] = latestMeasurement;
-    clientUpdate.measurements = measurements;
   }
 
   const client = await ClientMapper.updateClientById(

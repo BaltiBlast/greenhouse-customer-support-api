@@ -25,10 +25,7 @@ Un client utilise les propriétés suivantes :
 | `firstName` | chaîne | Prénom obligatoire et non vide |
 | `lastName` | chaîne | Nom obligatoire et non vide |
 | `birthDate` | chaîne | Date ISO au format `YYYY-MM-DD` |
-| `height` | nombre entier | Taille strictement positive |
-| `weight` | nombre | Poids supérieur ou égal à 1 |
-| `bodyFat` | nombre | Facultatif, entre 0 et 100 |
-| `muscleMass` | nombre | Facultatif et positif ou nul |
+| `height` | nombre entier | Taille facultative et strictement positive |
 | `objectives` | chaîne | Facultatif, une chaîne vide supprime la valeur |
 | `pathologies` | tableau | Liste de chaînes, vide par défaut à la création |
 | `limitations` | chaîne | Facultatif, une chaîne vide supprime la valeur |
@@ -37,8 +34,14 @@ Un client utilise les propriétés suivantes :
 | `emergencyContactRelationship` | chaîne | Facultatif, une chaîne vide supprime la valeur |
 | `emergencyContactPhone` | chaîne | Facultatif, une chaîne vide supprime la valeur |
 
-Les propriétés inconnues sont refusées. Les champs `ownerId`, `measurements`,
-`createdAt` et `updatedAt` sont gérés par l'API et ne doivent pas être envoyés.
+Les propriétés inconnues sont refusées. Les champs `ownerId`, `createdAt` et
+`updatedAt` sont gérés par l'API et ne doivent pas être envoyés.
+
+## Mesures du client
+
+Le poids, la masse grasse et la masse musculaire ne sont pas stockés dans le
+document client. Ils utilisent le module dédié décrit dans
+[`../measurements/AGENTS.md`](../measurements/AGENTS.md).
 
 ## Lire tous les clients
 
@@ -57,15 +60,7 @@ Réponse `200` : tableau des clients appartenant à l'utilisateur connecté.
     "firstName": "Camille",
     "lastName": "Martin",
     "birthDate": "1992-03-14T00:00:00.000Z",
-    "measurements": [
-      {
-        "measuredAt": "2026-09-28T08:00:00.000Z",
-        "height": 168,
-        "weight": 64,
-        "bodyFat": 24,
-        "muscleMass": 25
-      }
-    ],
+    "height": 168,
     "objectives": "Améliorer la condition physique générale",
     "pathologies": [],
     "hasEatingDisorder": false,
@@ -94,8 +89,8 @@ Cette requête ne reçoit pas de corps JSON.
 POST /api/clients
 ```
 
-Les champs `firstName`, `lastName`, `birthDate`, `height` et `weight` sont
-obligatoires. Les autres champs sont facultatifs.
+Les champs `firstName`, `lastName` et `birthDate` sont obligatoires. Les autres
+champs sont facultatifs.
 
 ```json
 {
@@ -103,9 +98,6 @@ obligatoires. Les autres champs sont facultatifs.
   "lastName": "Martin",
   "birthDate": "1992-03-14",
   "height": 168,
-  "weight": 64,
-  "bodyFat": 24,
-  "muscleMass": 25,
   "objectives": "Améliorer la condition physique générale",
   "pathologies": [],
   "limitations": "",
@@ -115,9 +107,6 @@ obligatoires. Les autres champs sont facultatifs.
   "emergencyContactPhone": "0600000001"
 }
 ```
-
-La première mesure est créée automatiquement à partir de `height`, `weight`,
-`bodyFat` et `muscleMass`.
 
 - Réponse `201` : `{ "id": "identifiant créé" }`.
 - Réponse `400` : données invalides.
@@ -133,13 +122,10 @@ doit être fournie. Les autres propriétés restent inchangées.
 
 ```json
 {
-  "weight": 62.5,
+  "height": 169,
   "objectives": "Préparer une course"
 }
 ```
-
-Les propriétés de mesure fournies modifient uniquement la dernière mesure
-enregistrée. Elles ne créent pas une nouvelle entrée dans l'historique.
 
 - Réponse `200` : `{ "id": "identifiant modifié" }`.
 - Réponse `400` : identifiant ou données invalides.
