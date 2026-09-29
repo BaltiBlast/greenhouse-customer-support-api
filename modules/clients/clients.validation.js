@@ -31,10 +31,9 @@ const clientValidationSchema = z.strictObject({
     .array(z.string({ error: "Chaque pathologie doit être un texte." }).trim(), {
       error: "Les pathologies doivent être une liste.",
     })
-    .transform((pathologies) => pathologies.filter(Boolean))
-    .default([]),
+    .transform((pathologies) => pathologies.filter(Boolean)),
   limitations: optionalTextSchema,
-  hasEatingDisorder: z.boolean({ error: "La mention du trouble alimentaire doit être un booléen." }).default(false),
+  hasEatingDisorder: z.boolean({ error: "La mention du trouble alimentaire doit être un booléen." }),
   emergencyContactName: optionalTextSchema,
   emergencyContactRelationship: optionalTextSchema,
   emergencyContactPhone: optionalTextSchema,
@@ -45,5 +44,12 @@ export const clientIdValidationSchema = z.string().regex(
   "L'identifiant du client est invalide.",
 );
 
-export const createClientValidationSchema = clientValidationSchema;
-export const updateClientValidationSchema = clientValidationSchema;
+export const createClientValidationSchema = clientValidationSchema.extend({
+  pathologies: clientValidationSchema.shape.pathologies.default([]),
+  hasEatingDisorder: clientValidationSchema.shape.hasEatingDisorder.default(false),
+});
+export const updateClientValidationSchema = clientValidationSchema
+  .partial()
+  .refine((client) => Object.keys(client).length > 0, {
+    message: "Au moins un champ doit être renseigné.",
+  });

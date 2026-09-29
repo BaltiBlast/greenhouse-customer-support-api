@@ -3,6 +3,7 @@ import {
   deleteEvent,
   getAllEvents,
   getEventById,
+  InvalidEventUpdateError,
   updateEvent,
 } from "./events.service.js";
 import {
@@ -96,6 +97,10 @@ export async function updateEventController(req, res, next) {
 
     return res.status(200).json({ id: event.id });
   } catch (error) {
+    if (error instanceof InvalidEventUpdateError) {
+      return res.status(400).json({ message: error.message });
+    }
+
     return next(error);
   }
 }
