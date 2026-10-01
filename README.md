@@ -2,6 +2,11 @@
 
 API Express de Greenhouse Customer Support.
 
+## Documentation frontend
+
+Le contrat HTTP complet destiné à l'intégration frontend est disponible dans
+[`docs/API_FRONTEND.md`](docs/API_FRONTEND.md).
+
 ## Installation
 
 ```bash
